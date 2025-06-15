@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Suduko.Models;
 using Suduko.Services;
 
@@ -8,20 +9,18 @@ namespace Suduko.Controllers;
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
-    private readonly ISolver _solver;
     public Board _board { get; set; } = null!;
 
-    public HomeController(ILogger<HomeController> logger, ISolver solver)
+    public HomeController(ILogger<HomeController> logger)
     {
         _logger = logger;
-        _solver = solver;
     }
 
     public IActionResult Index()
     {
         _board = new Board(9);
-        _solver.SolveSudoku(_board);
         HomeViewModel view = new(_board);
+        view.BoardJson = JsonConvert.SerializeObject(_board);
         return View(view);
     }
 

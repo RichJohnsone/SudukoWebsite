@@ -1,31 +1,266 @@
 ﻿@model HomeViewModel
+@using Newtonsoft.Json;
+
 @{
     ViewData["Title"] = "Rico's Killer Suduko";
 }
 
 <div class="row">
-    <div class="col-12">
+    <div class="col-7">
         <table class="board">
-            @for(int x = 0; x < Model.Board.Size; x++)
-                {
-                    <tr id="row_@x">
+            @for (int x = 0; x < Model.Board.Size; x++)
+            {
+                <tr id="row_@x" class="cell-row">
                     @for (int y = 0; y < Model.Board.Size; y++)
-                        {
-                            string cellId = $"cell_{x}_{y}";
-                            string numberClass = @Model.Board.Cells[x, y].IsCageStart ? "shiftUp" : "";
-                            <td class="cell" id=@cellId style="background-color:@Model.Board.Cells[x, y].Cage.Colour">
-                                <div class="cellContent">
-                                    @if (@Model.Board.Cells[x, y].IsCageStart)
-                                    {
-                                        <div class="cageStart">@Model.Board.Cells[x, y].Cage.Value.ToString()</div>
-                                    }
-                                    <div class="cellNumber @numberClass">@Model.Board.Cells[x, y].Value.ToString()</div>
-                                </div>
-                            </td>
-                        }
-                    </tr>
-                }
+                    {
+                        Cell cell = @Model.Board.Cells[x, y];
+                        string cellId = $"cell_{x}_{y}";
+                        //string numberClass = cell.IsCageStart ? "shiftUp" : "";
+                        string value = cell.Value == 0 ? "" : cell.Value.ToString();
+                        string cageStartClass = cell.IsCageStart ? "visible" : "not-visible";
+                        <td class="cell" id=@cellId style="background-color:@cell.Cage.Colour">
+                            <div class="cellContent">
+                                <div class="cageStart @cageStartClass">@cell.Cage.Solution.ToString()</div>
+
+                                <table class="suggestion-table" cellpadding="1" cellspacing="0">
+                                    <tr>
+                                        <td id="sug_1">@Html.Raw(cell.Suggestions[0])</td>
+                                        <td id="sug_2">@Html.Raw(cell.Suggestions[1])</td>
+                                        <td id="sug_3">@Html.Raw(cell.Suggestions[2])</td>
+                                    </tr>  
+                                    <tr>  
+                                        <td id="sug_4">@Html.Raw(cell.Suggestions[3])</td>
+                                        <td id="sug_5">@Html.Raw(cell.Suggestions[4])</td>
+                                        <td id="sug_6">@Html.Raw(cell.Suggestions[5])</td>
+                                    </tr>  
+                                    <tr>   
+                                        <td id="sug_7">@Html.Raw(cell.Suggestions[6])</td>
+                                        <td id="sug_8">@Html.Raw(cell.Suggestions[7])</td>
+                                        <td id="sug_9">@Html.Raw(cell.Suggestions[8])</td>
+                                    </tr>
+                                </table>
+
+                                <div class="cellNumber">@value</div>
+                            </div>
+                        </td>
+                    }
+                </tr>
+            }
         </table>
     </div>
+    <div class="col-5">
+        <div class="row">
+            <div class="col-2">
+                <span class="mode-label">Solve</span>
+            </div>
+            <div class="col-5">
+                <button class="btn btn-primary board-button" type="button" id="solve_cell">Cell</button>
+            </div>
+            <div class="col-5">
+                <button class="btn btn-primary board-button" type="button" id="solve_board">Board</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-2">
+                <span class="mode-label">Mode</span>
+            </div>
+            <div class="col-5">
+                <button class="btn btn-light board-button" type="button" id="suggestion">Suggest</button>
+            </div>
+            <div class="col-5">
+                <button class="btn btn-success board-button" type="button" id="guess">Guess</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-7">
+                <button class="btn btn-secondary board-button" type="button" id="undo">Undo</button>
+            </div>
+            <div class="col-5">
+                <button class="btn btn-secondary board-button" type="button" id="redo">Redo</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <button class="btn btn-primary board-button" type="button" id="reset_game">Reset game</button>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        var Board = @Html.Raw(@Model.BoardJson);
+
+        // Create an instance of Oops to hande undo/redo commands
+        const commandManager = new Oops();
+
+        // select active cell
+        $('td.cell').on('click', function () {
+            $('td.cell').removeClass("active-cell");
+            $(this).addClass("active-cell");
+        });
+
+        const numKeys = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+        let playMode = "guess";
+
+        // keyboard listener
+        window.onkeyup = function (event) {
+            let key = event.key.toUpperCase();
+            console.log("key pressed: " + key);
+            if (numKeys.includes(key)) {
+                NumberEntered(key, event);
+            } else if (key == 'S') {
+                setSuggestionMode();
+            } else if (key == 'G') {
+                setGuessMode();
+            }
+        }
+
+        // set guess mode
+        $("#guess").on("click", function () {
+            setGuessMode();
+        });
+
+        function setGuessMode() {
+            playMode = "guess";
+            $("#guess").removeClass("btn-light").addClass("btn-success");
+            $("#suggestion").removeClass("btn-success").addClass("btn-light");
+        }
+
+        // set suggest mode
+        $("#suggestion").on("click", function () {
+            setSuggestionMode();
+        });
+
+        function setSuggestionMode() {
+            playMode = "suggestion";
+            $("#guess").removeClass("btn-success").addClass("btn-light");
+            $("#suggestion").removeClass("btn-light").addClass("btn-success");
+        }
+
+        // action for number keys
+        function NumberEntered(num, e) {
+            let id = $('td.cell.active-cell').attr("id");
+            let row = id.split('_')[1];
+            let col = id.split('_')[2];
+
+            commandManager.execute(new EnterNumberCommand(row, col, num));
+        }
+
+        // solve cell
+        $("#solve_cell").on("click", function () {
+            let id = $('td.cell.active-cell').attr("id");
+            let row = id.split('_')[1];
+            let col = id.split('_')[2];
+           
+            commandManager.execute(new SolveCellCommand(row, col));
+       });
+
+        // solve board
+        $("#solve_board").on("click", function () {
+            $('td.cell').each(function () {
+                let id = $(this).attr("id");
+                let row = id.split('_')[1];
+                let col = id.split('_')[2];
+                let cellSolution = Board.Cells[row][col].Solution;
+                $(this).find("div.cellNumber").html(cellSolution);
+            });
+        });
+
+        // reset game
+        $("#reset_game").on("click", function () {
+            location.reload();
+        });
+
+        // undo
+        $("#undo").on("click", function () {
+            commandManager.undo();
+        });
+
+        // redo
+        $("#redo").on("click", function () {
+            commandManager.redo();
+        });
+
+        // enter number command
+        class EnterNumberCommand {
+            constructor(row, col, num) {
+                this.num = num;
+                this.row = row;
+                this.col = col;
+                this.playMode = playMode;
+            }
+
+            execute() {
+
+                if (playMode === "guess") {
+                    // update guess
+                    this.previousNum = Board.Cells[this.row][this.col].Value;
+                    Board.Cells[this.row][this.col].Value = parseInt(this.num, 10);
+                    $('td#cell_' + this.row + '_' + this.col).find("div.cellNumber").html(this.num);
+                    // clear suggestions
+                    this.suggestions = Board.Cells[this.row][this.col].Suggestions;
+                    $('td#cell_' + this.row + '_' + this.col).find("table.suggestion-table").find("td").text("");
+                }
+                else {
+                    // update suggestions
+                    this.previousNum = Board.Cells[this.row][this.col].Suggestions[this.num - 1];
+                    let newVal = this.num === Board.Cells[this.row][this.col].Suggestions[this.num - 1] ? "" : this.num;
+                    Board.Cells[this.row][this.col].Suggestions[this.num - 1] = newVal;
+                    $('td#cell_' + this.row + '_' + this.col).find("table.suggestion-table").find("td#sug_" + this.num).text(newVal);
+                }
+            }
+
+            undo() {
+                Board.Cells[this.row][this.col].Value = parseInt(this.previousNum, 10);
+
+                if (this.playMode === "guess") {
+                    let oldVal = this.previousNum;
+                    if (oldVal === 0) oldVal = "";
+                    Board.Cells[this.row][this.col].Value = parseInt(this.previousNum, 10);
+                    $('td#cell_' + this.row + '_' + this.col).find("div.cellNumber").html(oldVal);
+
+                    // maybe restore suggestions
+                    if (this.previousNum === 0) {
+                        Board.Cells[this.row][this.col].Suggestions = this.suggestions;
+                        for (let x = 0; x < 9; x++) {
+                            oldVal = Board.Cells[this.row][this.col].Suggestions[x];
+                            if (oldVal === "&nbsp;") oldVal = "";
+                            $('td#cell_' + this.row + '_' + this.col).find("table.suggestion-table td#sug_" + (x + 1)).text(oldVal);
+                        }
+                    }
+                }
+                else {
+                    let oldVal = this.previousNum;
+                    if (oldVal === "&nbsp;") oldVal = "";
+                    Board.Cells[this.row][this.col].Suggestions[this.num - 1] = oldVal;
+                    $('td#cell_' + this.row + '_' + this.col).find("table.suggestion-table").find("td#sug_" + this.num).text(oldVal);
+                }
+            }
+        }
+
+        // solve cell command
+        class SolveCellCommand {
+            constructor(row, col) {
+                this.row = row;
+                this.col = col;
+            }
+
+            execute() {
+                this.previousNum = Board.Cells[this.row][this.col].Value;
+
+                let cellSolution = Board.Cells[this.row][this.col].Solution;
+                $('td#cell_' + this.row + '_' + this.col).find("div.cellNumber").html(cellSolution);
+            }
+
+            undo() {
+                Board.Cells[this.row][this.col].Value = parseInt(this.previousNum, 10);
+
+                let oldVal = this.previousNum;
+                if (oldVal === 0) oldVal = "";
+                $('td#cell_' + this.row + '_' + this.col).find("div.cellNumber").html(oldVal);
+            }
+        }
+    </script>
+}
 

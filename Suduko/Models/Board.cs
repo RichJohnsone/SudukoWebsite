@@ -1,4 +1,5 @@
 ﻿using System;
+using Newtonsoft.Json;
 using Suduko.Helpers;
 using Suduko.Services;
 
@@ -10,7 +11,10 @@ namespace Suduko.Models
         public Cell[,] Cells { get; set; } = null!;
         public List<Cage> Cages { get; set; } = null!;
         public List<int> RandomOrder = null!;
+
+        [JsonIgnore]
         public ISolver _solver;
+        [JsonIgnore]
         public ICageBuilder _cageBuilder;
 
         public Board(int size = 9)
@@ -43,7 +47,23 @@ namespace Suduko.Models
             // build cages
             _cageBuilder.Build(this);
 
+            // store solution
+            for (int x = 0; x < Size; x++)
+            {
+                for (int y = 0; y < Size; y++)
+                {
+                    Cells[x, y].Solution = Cells[x, y].Value;
+                }
+            }
+
             // reset cell values
+            for (int x = 0; x < Size; x++)
+            {
+                for (int y = 0; y < Size; y++)
+                {
+                    Cells[x, y].Value = 0;
+                }
+            }
         }
     }
 }

@@ -17,9 +17,13 @@ body {
   margin-bottom: 60px;
 }
 
-.board tr td {
+.board tr.cell-row td.cell {
     padding: 10px 20px;
-    min-width:
+}
+
+.active-cell {
+    border: 4px solid red !important;
+    z-index: 10;
 }
 
 td.cell {
@@ -30,34 +34,36 @@ td.cell {
     height: 75px;
 }
 
-tr:nth-child(4) td,
-tr:nth-child(7) td,
-tr:first-child td {
+tr.cell-row:nth-child(4) td.cell,
+tr.cell-row:nth-child(7) td.cell,
+tr.cell-row:first-child td.cell {
     border-top: 3px solid grey;
 }
 
-tr:nth-child(3) td,
-tr:nth-child(6) td,
-tr:last-child td {
+tr.cell-row:nth-child(3) td.cell,
+tr.cell-row:nth-child(6) td.cell,
+tr.cell-row:last-child td.cell {
     border-bottom: 3px solid grey;
 }
 
-td:first-child,
-td:nth-child(4),
-td:nth-child(7) {
+td.cell:first-child,
+td.cell:nth-child(4),
+td.cell:nth-child(7) {
     border-left: 3px solid grey;
 }
 
-td:last-child,
-td:nth-child(3),
-td:nth-child(6) {
+td.cell:last-child,
+td.cell:nth-child(3),
+td.cell:nth-child(6) {
     border-right: 3px solid grey;
 }
 
 .cellNumber {
     font-size: 24px;
-    flex-grow: 4;
+    top: -65px;
     margin: auto;
+    position: relative;
+    z-index: 2;
 }
 
 .cageStart {
@@ -72,9 +78,48 @@ td:nth-child(6) {
     margin: 0;
     display: flex;
     flex-direction: column;
+    height: 55px;
+    min-height: 55px;
 }
 
 .shiftUp {
     position: relative;
     top: -9px;
+}
+
+.board-button {
+    width: 100%;
+    font-size: 24px;
+    margin-bottom: 28px;
+}
+
+.mode-label {
+    font-size: 24px;
+    position: relative;
+    top: 8px;
+}
+
+.suggestion-table {
+    font-size: 11px;
+    position: relative;
+    z-index: 1;
+    top: -12px;
+    color: grey;
+    height: 55px;
+    min-height: 55px;
+}
+
+.suggestion-table td {
+    width: 33.3%
+}
+.suggestion-table tr {
+    height: 33.3%;
+}
+
+.not-visible {
+    color: transparent;
+}
+
+.suggestion-table > .visible {
+    color: black;
 }

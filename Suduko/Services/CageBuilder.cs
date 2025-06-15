@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Drawing;
 using Suduko.Helpers;
@@ -28,7 +29,22 @@ namespace Suduko.Services
             PopulateAvailableCells();
             BuildCages();
             AssignColours();
+            SetFirstCells();
             return _cages;
+        }
+
+        private void SetFirstCells()
+        {
+            foreach (Cage cage in _cages)
+            {
+                Cell first = cage.Cells.First();
+                foreach (Cell c in cage.Cells)
+                {
+                    c.Cage = cage;
+                    if (c.Column < first.Column || c.Row < first.Row) first = c;
+                }
+                first.IsCageStart = true;
+            }
         }
 
         private void AssignColours()
@@ -140,6 +156,15 @@ namespace Suduko.Services
                         _currentCage = neighbours.First().Cage;
                         _currentCage.Cells.Add(cell);
                         cell.Cage = _currentCage;
+
+                        // set first cell in cage
+                        //Cell first = _currentCage.Cells.First();
+                        //foreach (Cell c in _currentCage.Cells)
+                        //{
+                        //    c.Cage = _currentCage;
+                        //    _availableCells.Remove(c);
+                        //    if (c.Column < first.Column || c.Row < first.Row) first = c;
+                        //}
                     }
                 }
             }
@@ -264,16 +289,16 @@ namespace Suduko.Services
         private void CommitCage()
         {
             _cages.Add(_currentCage);
-            Cell first = _currentCage.Cells.First();
+            //Cell first = _currentCage.Cells.First();
 
             foreach (Cell c in _currentCage.Cells)
             {
                 c.Cage = _currentCage;
                 _availableCells.Remove(c);
-                if (c.Column < first.Column || c.Row < first.Row) first = c;
+                //if (c.Column < first.Column || c.Row < first.Row) first = c;
             }
 
-            first.IsCageStart = true;
+            //first.IsCageStart = true;
         }
 
         private string GetColour(Cage currentCage)
