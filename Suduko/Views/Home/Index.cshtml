@@ -84,6 +84,11 @@
                 <button class="btn btn-primary board-button" type="button" id="reset_game">Reset game</button>
             </div>
         </div>
+        <div class="row">
+            <div class="col-12">
+                <div class="message" id="message"></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -100,7 +105,7 @@
             $(this).addClass("active-cell");
         });
 
-        const numKeys = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+        const numKeys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
         let playMode = "guess";
 
         // keyboard listener
@@ -145,6 +150,39 @@
             let col = id.split('_')[2];
 
             commandManager.execute(new EnterNumberCommand(row, col, num));
+
+            checkValidity();
+
+            if (checkComplete()) {
+                $("div.message").html("Congratulations");
+            }
+        }
+
+        function checkComplete() {
+            let complete = true;
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    if (Board.Cells[i][j].Value != Board.Cells[i][j].Solution) {
+                        complete = false;
+                        break;
+                    }                       
+                }
+            }
+            return complete;
+        }
+
+        function checkValidity() {
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    let num = Board.Cells[i][j].Value;
+                    if (isValid(i, j, num)) {
+                        $('td#cell_'+ i + '_' + j).find("div.cellNumber").removeClass("invalid");
+                    }
+                    else {
+                        $('td#cell_' + i + '_' + j).find("div.cellNumber").addClass("invalid");
+                    }
+                }
+            }
         }
 
         // solve cell
@@ -154,6 +192,9 @@
             let col = id.split('_')[2];
            
             commandManager.execute(new SolveCellCommand(row, col));
+
+            checkValidity();
+            checkValidity();
        });
 
         // solve board
@@ -175,12 +216,58 @@
         // undo
         $("#undo").on("click", function () {
             commandManager.undo();
+            checkValidity();
         });
 
         // redo
         $("#redo").on("click", function () {
             commandManager.redo();
+            checkValidity();
         });
+
+        function isValid( row,  col,  c)
+        {
+            let valid = true;
+            let colInt = parseInt(col);
+            let rowInt = parseInt(row);
+
+            for (let i = 0; i < 9; i++)
+            {
+                //check row  
+                if (Board.Cells[i][colInt].Value != 0 && Board.Cells[i][colInt].Value == c && rowInt != i)
+                    valid = false;
+                //check column  
+                if (Board.Cells[rowInt][i].Value != 0 && Board.Cells[rowInt][i].Value == c && colInt != i)
+                    valid = false;
+            }
+
+            //check 3*3 region
+            let regionRowStart = parseInt(rowInt / 3) * 3;
+            let regionColStart = parseInt(colInt / 3) * 3;
+            let regionSum = 0;
+            for (let i = regionRowStart; i < regionRowStart + 3; i++) {
+                for (let j = regionColStart; j < regionColStart + 3; j++) {
+                    regionSum = regionSum + Board.Cells[i][j].Value;
+                    if (Board.Cells[i][j].Value != 0 && Board.Cells[i][j].Value == c && i != rowInt && j != colInt)
+                        valid = false;
+                }
+            }
+            if (regionSum > 45)
+                valid = false
+
+            // check cage
+            let cageId = Board.Cells[row][col].Cage.Id;
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    if (Board.Cells[i][j].Value != 0 && Board.Cells[i][j].Cage.Id === cageId && Board.Cells[i][j].Value === c && i != row && j !=  col)
+                        valid = false;
+                }
+            }
+
+
+
+            return valid;
+        }
 
         // enter number command
         class EnterNumberCommand {
@@ -189,6 +276,7 @@
                 this.row = row;
                 this.col = col;
                 this.playMode = playMode;
+                this.clearedSuggestions = [];
             }
 
             execute() {
@@ -197,7 +285,23 @@
                     // update guess
                     this.previousNum = Board.Cells[this.row][this.col].Value;
                     Board.Cells[this.row][this.col].Value = parseInt(this.num, 10);
-                    $('td#cell_' + this.row + '_' + this.col).find("div.cellNumber").html(this.num);
+                    let newVal = this.num === "0" ? "" : this.num;
+                    $('td#cell_' + this.row + '_' + this.col).find("div.cellNumber").html(newVal);
+
+                    // remove any matching suggestions in row, col, cage
+                    for (let i = 0; i < 9; i++) {
+                        if (Board.Cells[this.row][i].Suggestions.includes(this.num.toString())) {
+                            Board.Cells[this.row][i].Suggestions[this.num - 1] = "&nbsp;";
+                            this.clearedSuggestions.push({ row: this.row, col: i, val: this.num })
+                            $('td#cell_' + this.row + '_' + i).find("table.suggestion-table").find("td#sug_" + this.num).text("");
+                        }
+                        if (Board.Cells[i][this.col].Suggestions.includes(this.num.toString())) {
+                            Board.Cells[i][this.col].Suggestions[this.num - 1] = "&nbsp;";
+                            this.clearedSuggestions.push({ row: i, col: this.col, val: this.num })
+                            $('td#cell_' + i + '_' + this.col).find("table.suggestion-table").find("td#sug_" + this.num).text("");
+                        }
+                    }
+
                     // clear suggestions
                     this.suggestions = Board.Cells[this.row][this.col].Suggestions;
                     $('td#cell_' + this.row + '_' + this.col).find("table.suggestion-table").find("td").text("");
@@ -220,13 +324,22 @@
                     Board.Cells[this.row][this.col].Value = parseInt(this.previousNum, 10);
                     $('td#cell_' + this.row + '_' + this.col).find("div.cellNumber").html(oldVal);
 
-                    // maybe restore suggestions
+                    // maybe restore suggestions in current cell
                     if (this.previousNum === 0) {
                         Board.Cells[this.row][this.col].Suggestions = this.suggestions;
                         for (let x = 0; x < 9; x++) {
                             oldVal = Board.Cells[this.row][this.col].Suggestions[x];
                             if (oldVal === "&nbsp;") oldVal = "";
                             $('td#cell_' + this.row + '_' + this.col).find("table.suggestion-table td#sug_" + (x + 1)).text(oldVal);
+                        }
+                    }
+
+                    // update suggestion in other cells
+                    if (this.clearedSuggestions.length > 0) {
+                        for (let i = 0; i < this.clearedSuggestions.length; i++) {
+                            var s = this.clearedSuggestions[i];
+                            Board.Cells[s.row][s.col].Suggestions[s.val -1] = s.val;
+                            $('td#cell_' + s.row + '_' + s.col).find("table.suggestion-table").find("td#sug_" + s.val).text(s.val);
                         }
                     }
                 }

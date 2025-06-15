@@ -61,7 +61,8 @@ namespace Suduko.Models
             {
                 for (int y = 0; y < Size; y++)
                 {
-                    Cells[x, y].Value = 0;
+                    if (Cells[x, y].Cage.Size > 1)
+                        Cells[x, y].Value = 0;
                 }
             }
         }

@@ -13,7 +13,7 @@ namespace Suduko.Services
         private List<Cell> _availableCells = new();
         List<Cage> _cages = new();
         Random rnd = new Random();
-        private List<int> _cageSizes = new() { 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 5, 5, 6, 7 };
+        private List<int> _cageSizes = new() { 1, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 5, 5, 6, 7 };
         private Cage _currentCage = null!;
         int cageIndex = 0;
         public List<string> Colours = new() { "LightSkyBlue", "LightPink", "Aquamarine", "Gold", "GreenYellow" };
@@ -121,7 +121,7 @@ namespace Suduko.Services
             List<Cell> available = new();
             available.AddRange(_availableCells);
             int singleCellCageCount = 0;
-            int singleCellCageMaxCount = rnd.Next(0, 3);
+            int singleCellCageMaxCount = rnd.Next(4, 7);
             foreach (Cell cell in available)
             {
                 // check cell is still available
@@ -152,19 +152,11 @@ namespace Suduko.Services
                     else
                     {
                         // pick a neighbour
+                        // maybe try and join in same region
                         neighbours = neighbours.OrderBy(i => Guid.NewGuid()).ToList();
                         _currentCage = neighbours.First().Cage;
                         _currentCage.Cells.Add(cell);
                         cell.Cage = _currentCage;
-
-                        // set first cell in cage
-                        //Cell first = _currentCage.Cells.First();
-                        //foreach (Cell c in _currentCage.Cells)
-                        //{
-                        //    c.Cage = _currentCage;
-                        //    _availableCells.Remove(c);
-                        //    if (c.Column < first.Column || c.Row < first.Row) first = c;
-                        //}
                     }
                 }
             }
