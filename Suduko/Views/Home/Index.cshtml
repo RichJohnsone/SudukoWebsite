@@ -1,0 +1,31 @@
+﻿@model HomeViewModel
+@{
+    ViewData["Title"] = "Rico's Killer Suduko";
+}
+
+<div class="row">
+    <div class="col-12">
+        <table class="board">
+            @for(int x = 0; x < Model.Board.Size; x++)
+                {
+                    <tr id="row_@x">
+                    @for (int y = 0; y < Model.Board.Size; y++)
+                        {
+                            string cellId = $"cell_{x}_{y}";
+                            string numberClass = @Model.Board.Cells[x, y].IsCageStart ? "shiftUp" : "";
+                            <td class="cell" id=@cellId style="background-color:@Model.Board.Cells[x, y].Cage.Colour">
+                                <div class="cellContent">
+                                    @if (@Model.Board.Cells[x, y].IsCageStart)
+                                    {
+                                        <div class="cageStart">@Model.Board.Cells[x, y].Cage.Value.ToString()</div>
+                                    }
+                                    <div class="cellNumber @numberClass">@Model.Board.Cells[x, y].Value.ToString()</div>
+                                </div>
+                            </td>
+                        }
+                    </tr>
+                }
+        </table>
+    </div>
+</div>
+
