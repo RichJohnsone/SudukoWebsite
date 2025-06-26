@@ -2,55 +2,55 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Suduko.Helpers
+namespace Suduko.Graph
 {
-    public class Graph
+    public class ColouringGraph
     {
-        private int numVertices;
-        private List<List<int>> adjList;
+        private sbyte numVertices;
+        private List<List<sbyte>> adjList;
 
-        public Graph(int vertices)
+        public ColouringGraph(sbyte vertices)
         {
             numVertices = vertices;
-            adjList = new List<List<int>>(vertices);
-            for (int i = 0; i < vertices; i++)
+            adjList = new List<List<sbyte>>(vertices);
+            for (sbyte i = 0; i < vertices; i++)
             {
-                adjList.Add(new List<int>());
+                adjList.Add(new List<sbyte>());
             }
         }
 
-        public void AddEdge(int u, int v)
+        public void AddEdge(sbyte u, sbyte v)
         {
             adjList[u].Add(v);
             adjList[v].Add(u);
         }
 
-        public void AddEdges(int u, List<int> v)
+        public void AddEdges(sbyte u, List<sbyte> v)
         {
-            foreach (int _v in v)
+            foreach (sbyte _v in v)
                 AddEdge(u, _v);
         }
 
-        public Dictionary<int, int> GreedyColouring()
+        public Dictionary<sbyte, sbyte> GreedyColouring()
         {
-            Dictionary<int, int> result = new Dictionary<int, int>();
+            Dictionary<sbyte, sbyte> result = new Dictionary<sbyte, sbyte>();
             // Assign the first color to the first vertex
             result[0] = 0;
 
             // A helper array to store the color of each vertex
             // Initially all vertices are uncolored.
-            int[] availableColors = new int[numVertices];
-            for (int i = 0; i < numVertices; i++)
+            sbyte[] availableColors = new sbyte[numVertices];
+            for (sbyte i = 0; i < numVertices; i++)
             {
                 availableColors[i] = -1;
             }
             availableColors[0] = 0;
 
             // Assign colors to remaining V-1 vertices
-            for (int u = 1; u < numVertices; u++)
+            for (sbyte u = 1; u < numVertices; u++)
             {
                 // Process all adjacent vertices and flag their colors as unavailable
-                foreach (int v in adjList[u])
+                foreach (sbyte v in adjList[u])
                 {
                     if (result.ContainsKey(v))
                     {
@@ -59,7 +59,7 @@ namespace Suduko.Helpers
                 }
 
                 // Find the first available color
-                int color;
+                sbyte color;
                 for (color = 0; color < numVertices; color++)
                 {
                     if (availableColors[color] != u)
@@ -71,7 +71,7 @@ namespace Suduko.Helpers
                 result[u] = color;
 
                 // Reset the availableColors array
-                foreach (int v in adjList[u])
+                foreach (sbyte v in adjList[u])
                 {
                     if (result.ContainsKey(v))
                     {

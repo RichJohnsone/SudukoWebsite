@@ -1,4 +1,5 @@
 ﻿using Suduko.Services;
+using Microsoft.AspNetCore.Mvc.Razor;
 
 namespace Suduko;
 
@@ -10,8 +11,10 @@ public class Program
 
         // Add services to the container.
         builder.Services.AddControllersWithViews();
-        builder.Services.AddScoped<ISolver, Solver>();
-        builder.Services.AddScoped<ICageBuilder, CageBuilder>();
+        //builder.Services.AddScoped<ISolver, Solver>();
+        //builder.Services.AddScoped<ICageBuilder, CageBuilder>();
+
+        //builder.Services.AddRazorPages().AddRazorRuntimecompilation();
 
         var app = builder.Build();
 

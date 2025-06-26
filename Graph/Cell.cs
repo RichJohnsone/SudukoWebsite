@@ -1,19 +1,18 @@
-﻿using System;
-namespace Suduko.Models
+﻿namespace Suduko.Graph
 {
-	public class Cell
+    public class Cell
 	{
-        public int Value { get; set; }
-        public int Solution { get; set; }
+        public sbyte Value { get; set; }
+        public sbyte Solution { get; set; }
         public Cage Cage { get; set; } = null!;
         public List<string> Suggestions { get; set; } = new() { "&nbsp;", "&nbsp;", "&nbsp;", "&nbsp;", "&nbsp;", "&nbsp;", "&nbsp;", "&nbsp;", "&nbsp;" };
         //public List<string> Suggestions { get; set; } = new() { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
         public bool IsValid { get; set; } = true;
-        public int Row { get; set; }
-        public int Column { get; set; }
+        public sbyte Row { get; set; }
+        public sbyte Column { get; set; }
 		public bool IsCageStart{ get; set; }
 
-		public Cell(int row, int column)
+		public Cell(sbyte row, sbyte column)
 		{
 			Row = row;
 			Column = column;

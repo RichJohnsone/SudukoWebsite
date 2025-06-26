@@ -2,26 +2,25 @@
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Suduko.Models;
-using Suduko.Services;
 
 namespace Suduko.Controllers;
 
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
-    public Board _board { get; set; } = null!;
+    public Graph.Board _board { get; set; } = null!;
 
     public HomeController(ILogger<HomeController> logger)
     {
         _logger = logger;
     }
 
-    public IActionResult Index()
+    public IActionResult Index(sbyte size = 9)
     {
-        _board = new Board(9);
-        HomeViewModel view = new(_board);
+        _board = new Graph.Board(size);
+        HomeViewModel2 view = new(_board);
         view.BoardJson = JsonConvert.SerializeObject(_board);
-        return View(view);
+        return View("Board2View", view);
     }
 
     public IActionResult Privacy()

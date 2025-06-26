@@ -1,0 +1,529 @@
+﻿@model HomeViewModel2
+@using Newtonsoft.Json;
+
+@{
+    ViewData["Title"] = "Rico's Killer Suduko";
+}
+
+
+@if (Model.Board.Size == 9)
+{
+    @section Styles {
+        <style>
+            tr.cell-row:nth-child(4) td.cell,
+            tr.cell-row:nth-child(7) td.cell,
+            tr.cell-row:first-child td.cell {
+                border-top: 3px solid grey;
+            }
+
+            tr.cell-row:nth-child(3) td.cell,
+            tr.cell-row:nth-child(6) td.cell,
+            tr.cell-row:last-child td.cell {
+                border-bottom: 3px solid grey;
+            }
+
+            td.cell:first-child,
+            td.cell:nth-child(4),
+            td.cell:nth-child(7) {
+                border-left: 3px solid grey;
+            }
+
+            td.cell:last-child,
+            td.cell:nth-child(3),
+            td.cell:nth-child(6) {
+                border-right: 3px solid grey;
+            }
+        </style>
+    }
+}
+else
+{
+    @section Styles {
+        <style>
+            tr.cell-row:nth-child(3) td.cell,
+            tr.cell-row:first-child td.cell {
+                border-top: 3px solid grey;
+            }
+
+            tr.cell-row:nth-child(2) td.cell,
+            tr.cell-row:last-child td.cell {
+                border-bottom: 3px solid grey;
+            }
+
+            td.cell:first-child,
+            td.cell:nth-child(3) {
+                border-left: 3px solid grey;
+            }
+
+            td.cell:last-child,
+            td.cell:nth-child(2) {
+                border-right: 3px solid grey;
+            }
+        </style>
+    }
+}
+
+<div class="row">
+    <div class="col-7">
+        <table class="board">
+            @for (int x = 0; x < Model.Board.Size; x++)
+            {
+                <tr id="row_@x" class="cell-row">
+                    @for (int y = 0; y < Model.Board.Size; y++)
+                    {
+                        Suduko.Graph.Cell cell = @Model.Board.Cells.Where(c => c.Row == x && c.Column == y).First();
+                        string cellId = $"cell_{x}_{y}";
+                        //string numberClass = cell.IsCageStart ? "shiftUp" : "";
+                        string value = cell.Value == 0 ? "" : cell.Value.ToString();
+                        string cageStartClass = cell.IsCageStart ? "visible" : "not-visible";
+                        <td class="cell" id=@cellId style="background-color:@cell.Cage.Colour">
+                            <div class="cellContent">
+                                <div class="cageStart @cageStartClass">@cell.Cage.Value.ToString()</div>
+
+                                <table class="suggestion-table" cellpadding="1" cellspacing="0">
+                                    @if (Model.Board.Size == 9)
+                                    {
+                                        <tr>
+                                            <td id="sug_1">@Html.Raw(cell.Suggestions[0])</td>
+                                            <td id="sug_2">@Html.Raw(cell.Suggestions[1])</td>
+                                            <td id="sug_3">@Html.Raw(cell.Suggestions[2])</td>
+                                        </tr>
+                                        <tr>
+                                            <td id="sug_4">@Html.Raw(cell.Suggestions[3])</td>
+                                            <td id="sug_5">@Html.Raw(cell.Suggestions[4])</td>
+                                            <td id="sug_6">@Html.Raw(cell.Suggestions[5])</td>
+                                        </tr>
+                                        <tr>
+                                            <td id="sug_7">@Html.Raw(cell.Suggestions[6])</td>
+                                            <td id="sug_8">@Html.Raw(cell.Suggestions[7])</td>
+                                            <td id="sug_9">@Html.Raw(cell.Suggestions[8])</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td id="sug_1">@Html.Raw(cell.Suggestions[0])</td>
+                                            <td id="sug_2">@Html.Raw(cell.Suggestions[1])</td>
+                                        </tr>
+                                        <tr>
+                                            <td id="sug_3">@Html.Raw(cell.Suggestions[2])</td>
+                                            <td id="sug_4">@Html.Raw(cell.Suggestions[3])</td>
+                                        </tr>
+                                    }
+                                </table>
+
+                                <div class="cellNumber">@value</div>
+                            </div>
+                        </td>
+                    }
+                </tr>
+            }
+        </table>
+    </div>
+    <div class="col-5">
+        <div class="row">
+            <div class="col-4">
+                <span class="mode-label">Solve</span>
+            </div>
+            <div class="col-4">
+                <button class="btn btn-primary board-button" type="button" id="solve_cell">Cell</button>
+            </div>
+            <div class="col-4">
+                <button class="btn btn-primary board-button" type="button" id="solve_board">Board</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-4">
+                <span class="mode-label">Mode</span>
+            </div>
+            <div class="col-4">
+                <button class="btn btn-light board-button" type="button" id="suggestion">Suggest</button>
+            </div>
+            <div class="col-4">
+                <button class="btn btn-success board-button" type="button" id="guess">Guess</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-8">
+                <button class="btn btn-secondary board-button" type="button" id="undo">Undo</button>
+            </div>
+            <div class="col-4">
+                <button class="btn btn-secondary board-button" type="button" id="redo">Redo</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-4">
+                <button class="btn btn-primary board-button" type="button" id="restart_game">Restart</button>
+            </div>
+            <div class="col-4">
+                <button class="btn btn-primary board-button" type="button" id="reset_4">Reset 4</button>
+            </div>
+            <div class="col-4">
+                <button class="btn btn-primary board-button" type="button" id="reset_9">Reset 9</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-4">
+                <span class="mode-label">Message :</span>
+            </div>
+            <div class="col-8">
+                <div class="message mt-2" id="message"></div>
+            </div>
+        </div>
+        <div class="row mt-5">
+            <div class="col-4">
+                <span class="mode-label">Mistakes :</span>
+            </div>
+            <div class="col-8">
+                <div class="message mt-2" id="mistakes"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var Board = @Html.Raw(@Model.BoardJson);
+
+        // Create an instance of Oops to hande undo/redo commands
+        const commandManager = new CommandManager();
+
+        // select active cell
+        $('td.cell').on('click', function () {
+            $('td.cell').removeClass("active-cell");
+            $(this).addClass("active-cell");
+        });
+
+        const numKeys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
+        let playMode = "guess";
+
+        // keyboard listener
+        window.onkeyup = function (event) {
+            let key = event.key.toUpperCase();
+            console.log("key pressed: " + key);
+            if (numKeys.includes(key)) {
+                NumberEntered(key, event);
+            } else if (key == 'S') {
+                setSuggestionMode();
+            } else if (key == 'G') {
+                setGuessMode();
+            } else if (key == 'ARROWDOWN') {
+                TryMoveActiveCell(key);
+            } else if (key == 'ARROWUP') {
+                TryMoveActiveCell(key);
+            } else if (key == 'ARROWLEFT') {
+                TryMoveActiveCell(key);
+            } else if (key == 'ARROWRIGHT') {
+                TryMoveActiveCell(key);
+            }
+        }
+
+        function TryMoveActiveCell(key) {
+            let id = $('td.cell.active-cell').attr("id");
+            let row = id.split('_')[1];
+            let col = id.split('_')[2];
+            let newRow = parseInt(row), newCol = parseInt(col);
+            let doMove = false;
+            if (key == 'ARROWDOWN' && parseInt(row) < 8) {
+                newRow += 1;
+                doMove = true;
+            } else if (key == 'ARROWUP' && parseInt(row) > 0) {
+                newRow -= 1;
+                doMove = true;
+            } else if (key == 'ARROWLEFT' && parseInt(col) > 0) {
+                newCol -= 1;
+                doMove = true;
+            } else if (key == 'ARROWRIGHT' && parseInt(col) < 8) {
+                doMove = true;
+                newCol += 1;
+            }
+            if (doMove) {
+                $('td.cell').removeClass("active-cell");
+                $('td#cell_' + newRow + '_' + newCol).addClass("active-cell");
+            }
+        }
+
+        // set guess mode
+        $("#guess").on("click", function () {
+            setGuessMode();
+        });
+
+        function setGuessMode() {
+            playMode = "guess";
+            $("#guess").removeClass("btn-light").addClass("btn-success");
+            $("#suggestion").removeClass("btn-success").addClass("btn-light");
+        }
+
+        // set suggest mode
+        $("#suggestion").on("click", function () {
+            setSuggestionMode();
+        });
+
+        function setSuggestionMode() {
+            playMode = "suggestion";
+            $("#guess").removeClass("btn-success").addClass("btn-light");
+            $("#suggestion").removeClass("btn-light").addClass("btn-success");
+        }
+
+        // action for number keys
+        function NumberEntered(num, e) {
+            let id = $('td.cell.active-cell').attr("id");
+            let row = id.split('_')[1];
+            let col = id.split('_')[2];
+
+            commandManager.execute(new EnterNumberCommand(row, col, num));
+
+            checkValidity();
+
+            if (checkComplete()) {
+                $("div#message").html("Congratulations");
+            }
+        }
+
+        function checkComplete() {
+            let complete = true;
+            for (let i = 0; i < Board.Size; i++) {
+                for (let j = 0; j < Board.Size; j++) {
+                    if (Board.Cells[i * Board.Size + j].Value != Board.Cells[i * Board.Size + j].Solution) {
+                        complete = false;
+                        break;
+                    }
+                }
+            }
+            return complete;
+        }
+
+        function checkValidity() {
+            for (let i = 0; i < Board.Size; i++) {
+                for (let j = 0; j < Board.Size; j++) {
+                    let num = Board.Cells[i * Board.Size + j].Value;
+                    if (isValid(i, j, num)) {
+                        $('td#cell_'+ i + '_' + j).find("div.cellNumber").removeClass("invalid");
+                    }
+                    else {
+                        $('td#cell_' + i + '_' + j).find("div.cellNumber").addClass("invalid");
+                    }
+                }
+            }
+        }
+
+        // solve cell
+        $("#solve_cell").on("click", function () {
+            let id = $('td.cell.active-cell').attr("id");
+            let row = id.split('_')[1];
+            let col = id.split('_')[2];
+
+            commandManager.execute(new SolveCellCommand(row, col));
+
+            checkValidity();
+       });
+
+        // solve board
+        $("#solve_board").on("click", function () {
+            $('td.cell').each(function () {
+                let id = $(this).attr("id");
+                let row = id.split('_')[1];
+                let col = id.split('_')[2];
+                let cellSolution = Board.Cells[parseInt(row) * Board.Size + parseInt(col)].Solution;
+                $(this).find("div.cellNumber").html(cellSolution);
+            });
+        });
+
+        // reset game
+        $("#restart_game").on("click", function () {
+            location.reload();
+        });
+
+        // restart 4
+        $("#reset_4").on("click", function () {
+            window.location = '/?size=4'
+        });
+
+        // restart 9
+        $("#reset_9").on("click", function () {
+            window.location = '/?size=9'
+        });
+
+        // undo
+        $("#undo").on("click", function () {
+            commandManager.undo();
+            checkValidity();
+        });
+
+        // redo
+        $("#redo").on("click", function () {
+            commandManager.redo();
+            checkValidity();
+        });
+
+        function isValid( row,  col,  c)
+        {
+            let valid = true;
+            let colInt = parseInt(col);
+            let rowInt = parseInt(row);
+            this.index = parseInt(row) * Board.Size + parseInt(col);
+            this.cellId = 'td#cell_' + this.row + '_' + this.col;
+
+            Board.SolverGraph.neighbours[this.index].forEach(function (value, index) {
+                if (value) {
+                    if (Board.Cells[index].Value == c) {
+                        valid = false;
+                        return valid;
+                    }
+                }
+            });
+
+            //for (let i = 0; i < 9; i++)
+            //{
+            //    //check row
+            //    if (Board.Cells[i][colInt].Value != 0 && Board.Cells[i][colInt].Value == c && rowInt != i)
+            //        valid = false;
+            //    //check column
+            //    if (Board.Cells[rowInt][i].Value != 0 && Board.Cells[rowInt][i].Value == c && colInt != i)
+            //        valid = false;
+            //}
+
+            ////check 3*3 region
+            //let regionRowStart = parseInt(rowInt / 3) * 3;
+            //let regionColStart = parseInt(colInt / 3) * 3;
+            //let regionSum = 0;
+            //for (let i = regionRowStart; i < regionRowStart + 3; i++) {
+            //    for (let j = regionColStart; j < regionColStart + 3; j++) {
+            //        regionSum = regionSum + Board.Cells[i][j].Value;
+            //        if (Board.Cells[i][j].Value != 0 && Board.Cells[i][j].Value == c && i != rowInt && j != colInt)
+            //            valid = false;
+            //    }
+            //}
+            //if (regionSum > 45)
+            //    valid = false
+
+            //// check cage
+            //let cageTotal = 0;
+            //let cageId = Board.Cells[row][col].Cage.Id;
+            //for (let i = 0; i < 9; i++) {
+            //    for (let j = 0; j < 9; j++) {
+            //        if (Board.Cells[i][j].Value != 0 && Board.Cells[i][j].Cage.Id === cageId && Board.Cells[i][j].Value === c && i != row && j != col) {
+            //            valid = false;
+            //        }
+            //        if (Board.Cells[i][j].Value != 0 && Board.Cells[i][j].Cage.Id === cageId) {
+            //            cageTotal += Board.Cells[i][j].Value;
+            //        }
+            //    }
+            //}
+            //if (cageTotal > Board.Cells[row][col].Cage.Solution)
+            //    valid = false
+
+            return valid;
+        }
+
+        // enter number command
+        class EnterNumberCommand {
+            constructor(row, col, num) {
+                this.num = num;
+                this.row = parseInt(row);
+                this.col = parseInt(col);
+                this.playMode = playMode;
+                this.clearedSuggestions = [];
+                this.index = parseInt(row) * Board.Size + parseInt(col);
+                this.cellId = 'td#cell_' + this.row + '_' + this.col;
+            }
+
+            execute() {
+
+                if (playMode === "guess") {
+                    // update guess
+                    this.previousNum = Board.Cells[this.index].Value;
+                    Board.Cells[this.index].Value = parseInt(this.num, 10);
+                    let newVal = this.num === "0" ? "" : this.num;
+                    $(this.cellId).find("div.cellNumber").html(newVal);
+
+                    // remove any matching suggestions in row, col, cage
+                    for (let i = 0; i < Board.Size; i++) {
+                        if (Board.Cells[this.row * Board.Size + i].Suggestions.includes(this.num.toString())) {
+                            Board.Cells[this.row * Board.Size + i].Suggestions[this.num - 1] = "&nbsp;";
+                            this.clearedSuggestions.push({ row: this.row, col: i, val: this.num })
+                            $('td#cell_' + this.row + '_' + i).find("table.suggestion-table").find("td#sug_" + this.num).text("");
+                        }
+                        if (Board.Cells[i * Board.Size + this.col].Suggestions.includes(this.num.toString())) {
+                            Board.Cells[i * Board.Size + this.col].Suggestions[this.num - 1] = "&nbsp;";
+                            this.clearedSuggestions.push({ row: i, col: this.col, val: this.num })
+                            $('td#cell_' + i + '_' + this.col).find("table.suggestion-table").find("td#sug_" + this.num).text("");
+                        }
+                    }
+
+                    // clear suggestions
+                    this.suggestions = Board.Cells[this.index].Suggestions;
+                    $(this.cellId).find("table.suggestion-table").find("td").text("");
+                }
+                else {
+                    // update suggestions
+                    this.previousNum = Board.Cells[this.index].Suggestions[this.num - 1];
+                    let newVal = this.num === Board.Cells[this.index].Suggestions[this.num - 1] ? "" : this.num;
+                    Board.Cells[this.index].Suggestions[this.num - 1] = newVal;
+                    $(this.cellId).find("table.suggestion-table").find("td#sug_" + this.num).text(newVal);
+                }
+            }
+
+            undo() {
+                Board.Cells[this.index].Value = parseInt(this.previousNum, 10);
+
+                if (this.playMode === "guess") {
+                    let oldVal = this.previousNum;
+                    if (oldVal === 0) oldVal = "";
+                    Board.Cells[this.index].Value = parseInt(this.previousNum, 10);
+                    $(this.cellId).find("div.cellNumber").html(oldVal);
+
+                    // maybe restore suggestions in current cell
+                    if (this.previousNum === 0) {
+                        Board.Cells[this.index].Suggestions = this.suggestions;
+                        for (let x = 0; x < Board.Size; x++) {
+                            oldVal = Board.Cells[this.index].Suggestions[x];
+                            if (oldVal === "&nbsp;") oldVal = "";
+                            $(this.cellId).find("table.suggestion-table td#sug_" + (x + 1)).text(oldVal);
+                        }
+                    }
+
+                    // update suggestion in other cells
+                    if (this.clearedSuggestions.length > 0) {
+                        for (let i = 0; i < this.clearedSuggestions.length; i++) {
+                            var s = this.clearedSuggestions[i];
+                            Board.Cells[s.row * Board.Size + s.col].Suggestions[s.val -1] = s.val;
+                            $('td#cell_' + s.row + '_' + s.col).find("table.suggestion-table").find("td#sug_" + s.val).text(s.val);
+                        }
+                    }
+                }
+                else {
+                    let oldVal = this.previousNum;
+                    if (oldVal === "&nbsp;") oldVal = "";
+                    Board.Cells[this.index].Suggestions[this.num - 1] = oldVal;
+                    $(this.cellId).find("table.suggestion-table").find("td#sug_" + this.num).text(oldVal);
+                }
+            }
+        }
+
+        // solve cell command
+        class SolveCellCommand {
+            constructor(row, col) {
+                this.row = row;
+                this.col = col;
+                this.index = parseInt(row) * Board.Size + parseInt(col);
+                this.cellId = 'td#cell_' + this.row + '_' + this.col;
+            }
+
+            execute() {
+                this.previousNum = Board.Cells[this.index].Value;
+
+                let cellSolution = Board.Cells[this.index].Solution;
+                $(this.cellId).find("div.cellNumber").html(cellSolution);
+            }
+
+            undo() {
+                Board.Cells[this.index].Value = parseInt(this.previousNum, 10);
+
+                let oldVal = this.previousNum;
+                if (oldVal === 0) oldVal = "";
+                $(this.cellId).find("div.cellNumber").html(oldVal);
+            }
+        }
+    </script>
+}

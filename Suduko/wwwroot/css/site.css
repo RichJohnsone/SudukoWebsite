@@ -33,30 +33,6 @@ td.cell {
     height: 75px;
 }
 
-tr.cell-row:nth-child(4) td.cell,
-tr.cell-row:nth-child(7) td.cell,
-tr.cell-row:first-child td.cell {
-    border-top: 3px solid grey;
-}
-
-tr.cell-row:nth-child(3) td.cell,
-tr.cell-row:nth-child(6) td.cell,
-tr.cell-row:last-child td.cell {
-    border-bottom: 3px solid grey;
-}
-
-td.cell:first-child,
-td.cell:nth-child(4),
-td.cell:nth-child(7) {
-    border-left: 3px solid grey;
-}
-
-td.cell:last-child,
-td.cell:nth-child(3),
-td.cell:nth-child(6) {
-    border-right: 3px solid grey;
-}
-
 .cellNumber {
     font-size: 24px;
     top: -65px;
